@@ -1,0 +1,282 @@
+---
+title: 'Tipologia i cicle de vida de les dades: Pràctica 2'
+author: 'Autor: María Martínez Gil'
+date: "Gener 2024"
+output:
+  pdf_document:
+    toc: yes
+    toc_depth: '2'
+editor_options:
+  markdown:
+    wrap: 72
+---
+
+<style type="text/css">
+div#TOC li {
+    list-style:none;
+    background-image:none;
+    background-repeat:none;
+    background-position:0; 
+}
+</style>
+
+
+
+------------------------------------------------------------------------
+
+# Descripció de dataset
+
+------------------------------------------------------------------------
+
+El conjunt suggerit per a l'elaboració de la pràctica és “Heart Attack Analysis & Prediction Dataset” disponible en l’enllaç https://www.kaggle.com/datasets/rashikrahmanpritom/heart-attack-analysis-prediction-dataset?resource=download .
+
+Aquest dataset conté informació de caràcter mèdic que es volen fer servir per tal de predir quina pacient tenen un alt risc de patir un atac al cor.
+
+Aquesta capacitat és interessant per tal de poder fer un seguiment més exhaustiu d’aquell pacients que presenten un alt risc d’atac i poder, en última instància, evitar la seua mort.
+
+La pregunta a respondre seria la següent: “Va a  patir aquest pacient un atac al cor?”
+
+Les columnes que podem trobar són les següents:
+
+* age. Edat de la persona
+
+* sex. Sexe de la persona, inclou els valors 0 i 1.
+
+* cp. Tipus de dolor de pit.
+
+* trtbps. Tensió sanguínea en repòs.
+
+* chol. Colesterol en mg/dl mesurat amb sensor via BMI.
+
+* fbs. Glucèmia en dejú.
+
+* restecg. Resultats electrocardiograma en repòs.
+
+* thalachh. Ritme cardíac màxim assolit.
+
+* exng. Angina induïda per exercici. 0 és no, 1 és sí.
+
+* oldpeak. Pic anterior.
+
+* slp. Slope.
+
+* caa. Nombre de vasos majors.
+
+* thall. Rati d'interès.
+
+* output. Eixida de risc d’atac.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+ruta<-file.choose()
+
+dades <- read.csv(ruta, sep=",", dec = ".")
+
+str(dades)
+```
+
+Podem veure que el nostre conjunt està format per 303 registres i 14 variables.
+
+------------------------------------------------------------------------
+
+# Integració i selecció
+
+------------------------------------------------------------------------
+
+Inicialment, podem veure que tenim dos conjunts de dades, en dos excels diferents.
+
+Com que no observem que hi haja cap variable per poder-los juntar tenim dues opcions:
+
+* No utilitzar el datasat amb les lectures d'oxigen en sang.
+
+* Juntar els dos datasets per la posició que ocupen en cada document. És a dir, la línia 1 amb la 1, la 2 amb la 2, etc.
+
+En el nostre cas, i sense confirmació de com s'ha de fer la unió, anem a considerar la opció més prudent no ajuntar les dades per no donar lloc a interpretacions errònies.
+
+A més a més, anem a destacar que en inici no tenim cap instrucció de seleccionar un cap grup concret d'individus i, per tant, utilitzarem la totalitat del conjunt.
+
+------------------------------------------------------------------------
+
+# Neteja de les dades
+
+------------------------------------------------------------------------
+
+## Zeros i elements buits
+
+Aabans de començar a mb les comprovacions, anem a analitzar el tipus de dades que tenim en el conjunt.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+summary(dades)
+str(dades)
+dades_num <- apply(dades, 2, as.numeric)
+```
+
+Com que veien que hi ha variables de tipus "int" anem a passar-les a tipus numèric. Finalment, comprovarem que el tipus és el que volíem.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+dades_num <- apply(dades, 2, as.numeric)
+str(dades_num)
+```
+
+Anem a comprovar si  existeixen valors buits.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+colSums(is.na(dades_num))
+```
+
+Podem veure que no apareix cap valor buit.
+
+## Valors extrems
+
+Per als valors extrem anem a mostrar els valors atípics utilitzant una comanda a partir d'un boxplot.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+boxplot.stats(dades$age)$out
+
+boxplot.stats(dades$sex)$out
+
+boxplot.stats(dades$cp)$out
+
+boxplot.stats(dades$trtbps)$out
+
+boxplot.stats(dades$chol)$out
+
+boxplot.stats(dades$fbs)$out
+
+boxplot.stats(dades$restecg)$out
+
+boxplot.stats(dades$thalachh)$out
+
+boxplot.stats(dades$exng)$out
+
+boxplot.stats(dades$oldpeak)$out
+
+boxplot.stats(dades$slp)$out
+
+boxplot.stats(dades$caa)$out
+
+boxplot.stats(dades$thall)$out
+
+boxplot.stats(dades$output)$out
+```
+
+Podem veure que encara que ens eixen diversos valors atípics aparentment no són anòmals i els podríem deixar en el conjunt de dades.
+
+------------------------------------------------------------------------
+
+# Anàlisi de les dades
+
+------------------------------------------------------------------------
+
+## Selecció de grups
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+dades_pca <- prcomp(dades[,c(1:13)], center = TRUE, scale = TRUE)
+summary(dades_pca)
+```
+
+Podem veure que segons l'anàlisi de components principals, per a explicar, al menys, el 95% de la variància necessitem totes les variables i, per tant, no en descartarem cap.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+dades.scaled <- scale(dades[,c(1:13)])
+```
+
+A més a més, com que el conjunt de dades no és particularment gran, no anem a reduir tampoc la quantitat de registres que tenim.
+
+## Comprovació de normalitat
+
+Anem a comprovar la normalitat de les nostres variables.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+shapiro_results <- apply(dades_num, 2, shapiro.test)
+
+print(shapiro_results)
+```
+
+Hem comprovat que, segons el test de Shapiro-Wilk cap de les vaiables compleix la condició de normalitat. Per tant, haurem d'utilitzar versions no paramètriques per a les comprovacions d'homocesticitat. No obstant això, no anem a fer un anàlisi d'homocesticitat ja que no ebservem un grup clar de variables en les quals tindria sentit comprara les variàncies.
+
+
+## Aplicació de proves estadístiques
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+response_variable <- dades_num[, "output"]
+
+predictor_variables <- dades_num[, -which(names(dades_num) == "response_column_name")]
+
+model <- glm(response_variable ~ ., family = binomial, data = as.data.frame(dades_num))
+
+summary(model)
+```
+
+Notem que en quest cas la mesura que utilitzem per avalacuar la qualitat del model és el AIC.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+selected_columns <- dades_num[, -ncol(dades_num)]
+
+correlation_matrix <- cor(selected_columns, method = "spearman")
+
+print(correlation_matrix)
+```
+
+Podem veure que no existeixen correlacions entre les variables del nostre conjunt ja que en cap d'elles es super el 0,60 en valor absolut.
+
+------------------------------------------------------------------------
+
+# Representació dels resultats
+
+------------------------------------------------------------------------
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+selected_columns <- dades_num[, -ncol(dades_num)]
+boxplot(selected_columns)
+
+cp_column <- dades_num[, "cp"]
+cp_colors <- c("red", "green", "blue", "purple")
+barplot(cp_column, main = "Barplot of chest pain", xlab = "Observation", ylab = "cp Value", col = cp_colors, beside = FALSE)
+
+plot(model)
+```
+
+Als gràfics de boxplot podem veure els valors atípics que havíem comentat en el punt de neteja de dades.
+
+També hem fet un gràfic on podem veure la distribució de valors dels tipus de dolor de pit.
+
+A més  a més hem proporcionat la representació de model de regressió logística que havíem fet en l'apartat anterior.
+
+------------------------------------------------------------------------
+
+# Resolució del problema
+
+------------------------------------------------------------------------
+
+En aquest problema hem pogut traure les següents conclusions:
+
+* Les variables utilitzades contribueixen de manera similar a l'explicació de la variable output, sense destacar cap d'elles ni aportar cap informació especialment rellevant cap d'elles.
+
+* Trobar un model que explique el comportament dels atacs al cor amb resultat acceptablement bons no ha sigut possible.
+
+* Tampoc ha hagut correlacions importats entre les variables, per tant, deixant descartada la possibilitat de poder investigar-les.
+
+
+------------------------------------------------------------------------
+
+# Codi
+
+------------------------------------------------------------------------
+
+El codi es pot trobar pujat al repositori de GitHub: 
+
+https://github.com/MariaMartinezGil/Practica-2/tree/main 
+
+------------------------------------------------------------------------
+
+# Vídeo
+
+------------------------------------------------------------------------
+
+El video explicatiu de la pràctica es pot trobar a l'enllaç de Google Drive: 
+
+https://drive.google.com/drive/folders/1y06IIinZsgDLK_R3JXjOA8Drx40QAQS6?usp=sharing 
+
+
+
+
